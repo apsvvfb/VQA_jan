@@ -1,5 +1,17 @@
-require 'nn'
 require 'os'
+file = io.open("tesaat.txt", "w")
+var="abc"
+file:write('wrote json checkpoint to ' .. var .. '.json', "\n")
+file:write(string.format('iter %s',var), "\n")
+file:write("hello", "\n")
+file:write("hello", "\n")
+file:write("hello", "\n")
+io.close(file)
+os.exit()
+
+
+
+require 'nn'
 
     imgfeat = torch.Tensor(3,196,512)  -- batchsize x  196             x 512
 print(#imgfeat)
