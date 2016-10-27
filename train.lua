@@ -71,6 +71,7 @@ cmd:option('-gpuid', 6, 'which gpu to use. -1 = use CPU')
 cmd:option('-seed', 123, 'random number generator seed to use')
 
 -- c-nrong: combine areas
+cmd:option('-use_english_attenmaps', 1, 'use attenmaps generated from English questions or not. 1 means yes, while 0 means no')
 cmd:option('-input_area_train_h5','data/vqa_data_area_train.h5',' hdf5 file which stores the attenmaps for train images')
 cmd:option('-input_area_test_h5', 'data/vqa_data_area_test.h5','a hdf5 file which stores the attenmaps for test images')
 
@@ -99,7 +100,7 @@ opt = cmd:parse(arg)
 -------------------------------------------------------------------------------
 -- Create the Data Loader instance
 -------------------------------------------------------------------------------
-local loader = DataLoader{h5_img_file_train = opt.input_img_train_h5, h5_img_file_test = opt.input_img_test_h5, h5_ques_file = opt.input_ques_h5, json_file = opt.input_json, feature_type = opt.feature_type, h5_atten_file_train=opt.input_atten_train_h5, h5_atten_file_test=opt.input_atten_test_h5}
+local loader = DataLoader{h5_img_file_train = opt.input_img_train_h5, h5_img_file_test = opt.input_img_test_h5, h5_ques_file = opt.input_ques_h5, json_file = opt.input_json, feature_type = opt.feature_type, h5_area_file_train=opt.input_area_train_h5, h5_area_file_test=opt.input_area_test_h5, ifengatten=opt.use_english_attenmaps}
 ------------------------------------------------------------------------
 --Design Parameters and Network Definitions
 ------------------------------------------------------------------------
@@ -125,9 +126,9 @@ else
   lmOpt.atten_type = opt.co_atten_type
   lmOpt.feature_type = opt.feature_type
 end
-
-protos.combarea = nn.combine_attenarea()
-
+if opt.use_english_attenmaps == 1 then
+  protos.combarea = nn.combine_attenarea()
+end
 protos.word = nn.word_level(lmOpt)
 protos.phrase = nn.phrase_level(lmOpt)
 protos.ques = nn.ques_level(lmOpt)
@@ -140,7 +141,9 @@ if opt.gpuid >= 0 then
   for k,v in pairs(protos) do v:cuda() end
 end
 
-local cparams, grad_cparams = protos.combarea.getParameter()
+if opt.use_english_attenmaps == 1 then
+  local cparams, grad_cparams = protos.combarea:getParameters()
+end
 local wparams, grad_wparams = protos.word:getParameters()
 local pparams, grad_pparams = protos.phrase:getParameters()
 local qparams, grad_qparams = protos.ques:getParameters()
@@ -149,15 +152,19 @@ local aparams, grad_aparams = protos.atten:getParameters()
 
 if string.len(opt.start_from) > 0 then
   print('Load the weight...')
-  cparams:copy(loaded_checkpoint.cparams)
+  if opt.use_english_attenmaps == 1 then
+    cparams:copy(loaded_checkpoint.cparams)
+  end
   wparams:copy(loaded_checkpoint.wparams)
   pparams:copy(loaded_checkpoint.pparams)
   qparams:copy(loaded_checkpoint.qparams)
   aparams:copy(loaded_checkpoint.aparams)
 end
 
-print('total number of parameters in combine_attenarea: ', cparams:nElement())
-assert(cparams:nElement() == grad_cparams:nElement())
+if opt.use_english_attenmaps == 1 then
+  print('total number of parameters in combine_attenarea: ', cparams:nElement())
+  assert(cparams:nElement() == grad_cparams:nElement())
+end
 
 print('total number of parameters in word_level: ', wparams:nElement())
 assert(wparams:nElement() == grad_wparams:nElement())
@@ -178,7 +185,9 @@ collectgarbage()
 -- Validation evaluation
 -------------------------------------------------------------------------------
 local function eval_split(split)
-  protos.combarea:evaluate()
+  if opt.use_english_attenmaps == 1 then
+    protos.combarea:evaluate()
+  end
   protos.word:evaluate()
   protos.phrase:evaluate()
   protos.ques:evaluate()
@@ -197,18 +206,20 @@ local function eval_split(split)
     if opt.gpuid >= 0 then
       data.answer = data.answer:cuda()
       data.images = data.images:cuda()
-      data.attenprobs = data.attenprobs:cuda()
+      if opt.use_english_attenmaps == 1 then
+        data.attenprobs = data.attenprobs:cuda()
+      end
       data.questions = data.questions:cuda()
       data.ques_len = data.ques_len:cuda()
     end
   n = n + data.images:size(1)
   xlua.progress(n, total_num)
- 
-  --combarea & data.probs are new added by nrong
-  local new_data_images = unpack(protos.combarea:forward({data.images,data.probs}))
-  local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, new_data_images}))
-
-  --local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, data.images}))
+  if opt.use_english_attenmaps == 1 then 
+    local new_data_images = unpack(protos.combarea:forward({data.images,data.attenprobs}))
+    local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, new_data_images}))
+  else
+    local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, data.images}))
+  end
 
   local conv_feat, p_ques, p_img = unpack(protos.phrase:forward({word_feat, data.ques_len, img_feat, mask}))
 
@@ -269,12 +280,17 @@ local function lossFun()
     data.questions = data.questions:cuda()
     data.ques_len = data.ques_len:cuda()
     data.images = data.images:cuda()
+    if opt.use_english_attenmaps == 1 then 
+	data.attenprobs = data.attenprobs:cuda()
+    end
   end
 
-  local new_data_images = unpack(protos.combarea:forward({data.images,data.probs}))
-
-  local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, new_data_images}))
-  --local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, data.images}))
+  if opt.use_english_attenmaps == 1 then
+    local new_data_images = unpack(protos.combarea:forward({data.images,data.attenprobs}))
+    local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, new_data_images}))
+  else
+    local word_feat, img_feat, w_ques, w_img, mask = unpack(protos.word:forward({data.questions, data.images}))
+  end
 
   local conv_feat, p_ques, p_img = unpack(protos.phrase:forward({word_feat, data.ques_len, img_feat, mask}))
 
@@ -297,10 +313,13 @@ local function lossFun()
     
   --local d_ques1 = protos.bl1:backward({ques_feat_0, data.ques_len}, d_ques2)
   local d_conv_feat, d_conv_img = unpack(protos.phrase:backward({word_feat, data.ques_len, img_feat}, {d_ques_feat, d_p_ques, d_p_img}))
-  
-  local d_new_image = protos.word:backward({data.questions, new_data_images}, {d_conv_feat, d_w_ques, d_w_img, d_conv_img, d_ques_img})
 
-  local d_prob = protos.combarea:backward({data.images,data.probs}, {d_new_image})
+  if opt.use_english_attenmaps == 1 then  
+    local d_new_image = protos.word:backward({data.questions, new_data_images}, {d_conv_feat, d_w_ques, d_w_img, d_conv_img, d_ques_img})
+    local d_prob = protos.combarea:backward({data.images,data.attenprobs}, {d_new_image})
+  else
+    local dummy = protos.word:backward({data.questions,data.images}, {d_conv_feat, d_w_ques, d_w_img, d_conv_img, d_ques_img})
+  end
   -----------------------------------------------------------------------------
   -- and lets get out!
   local stats = {}
@@ -357,7 +376,7 @@ while true do
       print('validation loss: ', val_loss, 'accuracy ', val_accu)
 
       local checkpoint_path = path.join(opt.checkpoint_path .. '_' .. opt.co_atten_type, 'model_id' .. opt.id .. '_iter'.. iter)
-      torch.save(checkpoint_path..'.t7', {cparams=cparams, cparams = cparams,wparams=wparams, pparams = pparams, qparams=qparams, aparams=aparams, lmOpt=lmOpt}) 
+      torch.save(checkpoint_path..'.t7', {cparams=cparams,wparams=wparams, pparams = pparams, qparams=qparams, aparams=aparams, lmOpt=lmOpt}) 
 
       local checkpoint = {}
       checkpoint.opt = opt
@@ -375,7 +394,9 @@ while true do
 
   -- perform a parameter update
   if opt.optim == 'rmsprop' then
-    rmsprop(cparams, grad_cparams, learning_rate, opt.optim_alpha, opt.optim_epsilon, c_optim_state)
+    if opt.use_english_attenmaps == 1 then
+      rmsprop(cparams, grad_cparams, learning_rate, opt.optim_alpha, opt.optim_epsilon, c_optim_state)
+    end
     rmsprop(wparams, grad_wparams, learning_rate, opt.optim_alpha, opt.optim_epsilon, w_optim_state)
     rmsprop(pparams, grad_pparams, learning_rate, opt.optim_alpha, opt.optim_epsilon, p_optim_state)
     rmsprop(qparams, grad_qparams, learning_rate, opt.optim_alpha, opt.optim_epsilon, q_optim_state)

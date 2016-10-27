@@ -25,10 +25,10 @@ def tokenize(sentence):
 
    res=res.next 
    while res:
+	#print(res.surface)
 	reslist.append(res.surface)
 	res = res.next
    del reslist[-1]
-
    #print(reslist[1],type(reslist[1])) #str:  ('\xe6\x9f')
    #for x in reslist: print x.decode("utf-8")
    

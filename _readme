@@ -2,9 +2,9 @@
 [have to remove the gray images]
 genIDs/generateIDs.sh
 trainID: question_answers_jan.json + /home/c-nrong/VQA/VG_100K/
-          (genIDs/trainID.txt)
+          (genIDs/trainID.txt) -- 64260 imgs
 testID:  question_answers_jan.json + /home/c-nrong/VQA/VG_100K_2/
-          (genIDs/testID.txt)
+          (genIDs/testID.txt)  -- 39696 imgs
 
 1. to generate Attention maps of english questions(done)
 #i. /home/c-nrong/VQA/draw/_all.sh (each question takes 28 seconds to generate AttenMaps)
@@ -16,12 +16,12 @@ testID:  question_answers_jan.json + /home/c-nrong/VQA/VG_100K_2/
 #input:  trainIDs.txt/testIDs.txt + English questions(less than 8) + images 
 #output: many txts (attenmaps). 
 #the number of txt for each image equals to the number of English questions for this image.
-ii. /home/c-nrong/VQA/HieCoAttenVQA2/eval.lua
-input: question_answers_genome.json (used as testset) + trainID+testID + images
+ii. /home/c-nrong/VQA/HieCoAttenVQA2
+input: question_answers_genome.json(used as eval set) + [trainID+testID](103956imgs) + images
 output: data/vqa_data_prepro.json(ix_to_img_test) + 'AttenmapsAndImgidx.h5('attenmaps','imgidx')
 trainset: VQA dataset
-testset: the dataset we wanna evaluation (genome)
-(a)generate vqa_raw_train.json +  vqa_raw_test.json
+evalset:  visual genome dataset(english)
+(a)generate vqa_raw_train.json() +  vqa_raw_test.json(95175imgs. why 95175 instead of 103956: because some imgs don't have English questions)
   cd /home/c-nrong/VQA/HieCoAttenVQA2/
   cd data/
   python vqa_preprocess.py --download 1 --split 1 
@@ -31,13 +31,15 @@ testset: the dataset we wanna evaluation (genome)
   cd image_model/
   python download_model.py --download 'VGG' 
 (c)Generate Question Features (data/vqa_data_prepro.h5, data/vqa_data_prepro.json)
+  #I modified the preppro_vqa.py to add 'ix_to_img_test' to data/vqa_data_prepro.json
   cd  prepro/
   python prepro_vqa.py --input_train_json ../data/vqa_raw_train.json --input_test_json ../data/vqa_raw_test.json --num_ans 1000
 (d)generate image feature(vqa_data_img_vgg_train.h5)
-(we don't need to extract feature for training set,so I comment some lines of prepro_img_vgg.lua)
+  #we don't need to extract feature for training set,so I comment some lines of prepro_img_vgg.lua
   cd prepro/
   th prepro_img_vgg.lua -input_json ../data/vqa_data_prepro.json -image_root /home/c-nrong/VQA/ -cnn_proto ../image_model/VGG_ILSVRC_19_layers_deploy.prototxt -cnn_model ../image_model/VGG_ILSVRC_19_layers.caffemodel
 (e)eval.lua(AttenmapsAndImgidx.h5)
+  #I modified eval.lua and misc/DataLoaderDisk.lua
   rm AttenmapsAndImgidx.h5
   th eval.lua
 
@@ -46,14 +48,15 @@ testset: the dataset we wanna evaluation (genome)
 #output: AreaAll.hdf5 ( 2-d: num of trainIDs x (196+196) )
 
 3. data/vqa_preprocess_Jan.py(done)
-input: question_answers_jan.json + trainIDs.txt/testIDs.txt
-output: vqa_raw_train.json/vqa_raw_test.json
+input:  question_answers_jan.json + trainIDs.txt/testIDs.txt
+output: vqa_raw_train.json(64260imgs-514048ques)
+        vqa_raw_test.json (39696imgs-317564ques)
 
 4. prepro/prepro_vqa_Jan.py (extract question feature)(done)
 #I changed the tokenizer to mecab, and the question number to 8(each image have 8 japanese questions)
 python prepro_vqa_jan.py --input_train_json ../data/vqa_raw_train.json --input_test_json ../data/vqa_raw_test.json --num_ans 1000
 
-x. prepro/prepro_img_vgg.lua (extract image feature)(running)
+x. prepro/prepro_img_vgg.lua (extract image feature)(done)
 th prepro_img_vgg.lua -input_json ../data/vqa_data_prepro.json -image_root /home/c-nrong/VQA/ -cnn_proto /home/c-nrong/VQA/HieCoAttenVQA2/image_model/VGG_ILSVRC_19_layers_deploy.prototxt -cnn_model /home/c-nrong/VQA/HieCoAttenVQA2/image_model/VGG_ILSVRC_19_layers.caffemodel
 
 #5. prepro/prepro_atten.py 
@@ -66,9 +69,5 @@ input:
 output: data/vqa_data_area_train.h5 + data/vqa_data_area_test.h5
 
 6. train.lua
-i.  misc/DataLoaderDisk.lua
-ii. misc/combine_attenarea.lua
-iii.misc/subcombarea.lua
-
-
+th train.lua
 

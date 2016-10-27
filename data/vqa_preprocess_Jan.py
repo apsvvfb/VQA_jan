@@ -2,7 +2,6 @@ import sys
 import json 
 import numpy as np
 filename="/home/c-nrong/VQA/draw/Json/question_answers_jan.json"
-inputpath="/home/c-nrong/VQA/"
 trainIDs="../genIDs/trainID.txt"
 testIDs="../genIDs/testID.txt"
 

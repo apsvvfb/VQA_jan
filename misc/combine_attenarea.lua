@@ -1,9 +1,9 @@
 require 'nn'
 local subcombarea = require 'misc.subcombarea'
+local layer, parent = torch.class('nn.combine_attenarea','nn.Module')
 
-local layer, parent = torch.class('nn.combine_attenarea','nn.Module')4
-function layer:_init()
-    parent._init(self)
+function layer:__init()
+    parent.__init(self)
     self.subcomb = subcombarea.subcombmainfunc()
 end
 
@@ -30,23 +30,22 @@ function layer:evaluate()
 end
 
 function layer:updateOutput(input)
-    self.imgfeat = input[1]
-    self.probs = input[2]
+    local imgfeat = input[1]
+    local probs = input[2]
+    local new_img_feat= self.subcomb:forward({imgfeat,probs})
 
-    self.new_img_feat= unpack(self.subcomb:forward({self.imgfeat,self.probs})
-
-    return {self.new_img_feat}
+    return {new_img_feat}
 end
 
 function layer:updateGradInput(input,gradOutput)
-    self.imgfeat = input[1]
-    self.probs = input[2]
+    local imgfeat = input[1]
+    local probs = input[2]
 
-    local d_probs = unpack(self.subcomb:backforward({self.imgfeat,self.probs},gradOutput)) --???
+    local d_imgfeat, d_probs = unpack(self.subcomb:backward({imgfeat, probs}, gradOutput[1])) --???
    
-    self.gradInput = d_probs 
+    self.gradInput = {d_imgfeat, d_probs}
     return self.gradInput
-
+end
 
 
 

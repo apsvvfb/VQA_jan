@@ -3,8 +3,8 @@ local utils = require 'misc.utils'
 local LanguageEmbedding = require 'misc.LanguageEmbedding'
 local attention = require 'misc.attention'
 
-
 local layer, parent = torch.class('nn.word_level', 'nn.Module')
+
 function layer:__init(opt)
     parent.__init(self)
     self.vocab_size = utils.getopt(opt, 'vocab_size') -- required
@@ -88,9 +88,6 @@ function layer:updateOutput(input)
   self.img_feat = self.cnn:forward(img)
 
   self.embed_output = self.LE:forward(seq)
-
-print(#self.img_feat)
-os.exit()
 
   local w_embed_ques, w_embed_img, ques_atten, img_atten = unpack(self.atten:forward({self.embed_output, self.img_feat, self.mask}))
 

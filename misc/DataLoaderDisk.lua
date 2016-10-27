@@ -13,8 +13,11 @@ function DataLoader:__init(opt)
         self.h5_img_file_test = hdf5.open(opt.h5_img_file_test, 'r')
     end
 
-    self.h5_atten_file_train=hdf5.open(opt.h5_input_area_train)
-    self.h5_atten_file_test=hdf5.open(opt.h5_input_area_test)
+    if opt.ifengatten == 1 then
+	self.ifengatten = 1
+        self.h5_atten_file_train=hdf5.open(opt.h5_area_file_train)
+        self.h5_atten_file_test=hdf5.open(opt.h5_area_file_test)
+    end
 
     print('DataLoader loading h5 question file: ', opt.h5_ques_file)
     local h5_file = hdf5.open(opt.h5_ques_file, 'r')
@@ -106,7 +109,9 @@ function DataLoader:getBatch(opt)
         self.img_batch = torch.Tensor(batch_size, 14, 14, 2048)
     end
 
-    self.attenprob_batch = torch.Tensor(batch_size,392)
+    if self.ifengatten == 1 then
+        self.attenprob_batch = torch.Tensor(batch_size,392)
+    end
 
     for i=1,batch_size do
         local ri = self.iterators[split] -- get next index from iterator
@@ -135,8 +140,10 @@ function DataLoader:getBatch(opt)
                     error('feature type error')
                 end
 	    end
-	    local attenprob = self.h5_atten_file_train:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
-	    self.attenprob_batch[i] = attenprob
+	    if self.ifengatten == 1 then
+	        local attenprob = self.h5_atten_file_train:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
+	        self.attenprob_batch[i] = attenprob
+	    end
         else
             img_idx[i] = self.img_pos_test[ix]
             if self.h5_img_file_test ~= nil then
@@ -152,8 +159,11 @@ function DataLoader:getBatch(opt)
                     error('feature type error')
                 end
             end
-            local attenprob = self.h5_atten_file_test:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
-            self.attenprob_batch[i] = attenprob
+
+	    if self.ifengatten == 1 then
+                local attenprob = self.h5_atten_file_test:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
+                self.attenprob_batch[i] = attenprob
+	    end
         end
     end
 
@@ -161,14 +171,18 @@ function DataLoader:getBatch(opt)
     -- fetch the question and image features.
     if split == 0 or split == 1 then
         data.images = self.img_batch:view(batch_size, 196, -1):contiguous()
-	data.attenprobs = self.attenprobs_batch:view(batch_size,392,-1):contiguous()
+	if self.ifengatten == 1 then
+   	    data.attenprobs = self.attenprob_batch:view(batch_size,392,-1):contiguous()
+	end
         data.questions = self.ques_train:index(1, ques_idx)
         data.ques_id = self.ques_id_train:index(1, ques_idx)
         data.ques_len = self.ques_len_train:index(1, ques_idx)
         data.answer = self.answer:index(1, ques_idx)
     else
         data.images = self.img_batch:view(batch_size, 196, -1):contiguous()
-	data.attenprobs = self.attenprobs_batch:view(batch_size,392,-1):contiguous()
+	if self.ifengatten == 1 then
+	    data.attenprobs = self.attenprob_batch:view(batch_size,392,-1):contiguous()
+	end
         data.questions = self.ques_test:index(1, ques_idx)
         data.ques_id = self.ques_id_test:index(1, ques_idx)
         data.ques_len = self.ques_len_test:index(1, ques_idx)        
