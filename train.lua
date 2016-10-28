@@ -54,7 +54,7 @@ cmd:option('-learning_rate_decay_every', 300, 'every how many epoch thereafter t
 cmd:option('-optim_alpha',0.99,'alpha for adagrad/rmsprop/momentum/adam')
 cmd:option('-optim_beta',0.995,'beta used for adam')
 cmd:option('-optim_epsilon',1e-8,'epsilon that goes into denominator in rmsprop')
-cmd:option('-max_iters', -1, 'max number of iterations to run for (-1 = run forever)')
+cmd:option('-max_iters', 210000, 'max number of iterations to run for (-1 = run forever)')
 cmd:option('-iterPerEpoch', 1200)
 
 -- Evaluation/Checkpointing
@@ -351,7 +351,7 @@ local learning_rate = opt.learning_rate
 -- create the path to save the model.
 paths.mkdir(opt.checkpoint_path .. '_' .. opt.co_atten_type)
 
-outfilena = io.open("train_without_engAttenmaps.txt", "w")
+outfilena = io.open("train_with_engAttenmaps.txt", "w")
 
 while true do
   -- eval loss/gradient

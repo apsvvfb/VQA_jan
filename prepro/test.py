@@ -13,16 +13,18 @@ def getIdx(imgidxs,itoimg):
      img = img.encode('punycode') #unicode -> ascii
      imgid=img.split('/')[1].split('.')[0]
      if imgid not in idxs: 
-         idxs[imgid] = [] 
+         idxs[imgid] = []
+	 #print imgid 
      idxs[imgid].append(i)
+
   return idxs
 
 def genHdf5(names,outfile,attenmaps,idxs):
-  #attenImgs  = np.ones((len(names),196))/196
-  attenImgs  = np.ones((len(names),196))
+  attenImgs  = np.ones((len(names),196))/196
   attenprobs = np.zeros((len(names),196))
   for ix, imgname in enumerate(names):
      imgid=os.path.basename(imgname).split('.')[0]
+     #print imgid
      ques_list=idxs.get(imgid,0)
      if ques_list != 0 :
 	ques_len = len(ques_list)
@@ -30,15 +32,17 @@ def genHdf5(names,outfile,attenmaps,idxs):
         for j in range(ques_len):
             atten = attenmaps[ques_list[j]]
             atten=(atten-min(atten))/(max(atten)-min(atten))
+   	    print(atten)
+	    sys.exit()
             attentemp[j]=atten
         attenprobs[ix]=np.sum(attentemp, axis=0)/ques_len    
      else:
-	attenprobs[ix]=np.ones((1,196)) 
-	#attenprobs[ix]=np.ones((1,196))/196
+	attenprobs[ix]=np.ones((1,196))/196
   final=np.hstack((attenImgs,attenprobs))
+  '''
   with h5py.File(outfile, 'w') as hf:
      hf.create_dataset('areaprobs', data=final)
-  
+  '''
 def main(params):
     jfile = json.load(open(params['input_json'], 'r'))
     names_train=jfile["unique_img_train"]
@@ -52,9 +56,9 @@ def main(params):
         attenmaps = np.array(data1)
 	data2 = hf.get('imgidx')
 	imgidx = np.array(data2)
-	
-    Idx = getIdx(imgidx,itoimg_test)
 
+    Idx = getIdx(imgidx,itoimg_test)
+    #print("total english images: %d,%d " %( len(imgidx), len(itoimg_test) ) ) 
     genHdf5(names_train,params['output_train'],attenmaps,Idx)
     genHdf5(names_test, params['output_test'], attenmaps,Idx)
 
@@ -70,6 +74,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     params = vars(args) # convert to ordinary dict
-    print 'parsed input parameters:'
-    print json.dumps(params, indent = 2)
     main(params)
