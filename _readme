@@ -71,3 +71,4 @@ output: data/vqa_data_area_train.h5 + data/vqa_data_area_test.h5
 6. train.lua
 th train.lua
 
+7. Analysis/
