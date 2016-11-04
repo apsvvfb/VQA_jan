@@ -27,11 +27,15 @@ if __name__ == "__main__":
 	inputfile1="eval_train_without_engAttenmaps.txt"
 	inputfile2="eval_train_with_v1_1dividedby196.txt"
 	inputfile3="eval_train_with_v1_1.txt"
+	inputfile4="eval_train_with_v2_onlyA.txt"
+	inputfile5="eval_train_with_v2_addone.txt"
 	iter1, loss1, acc1 = readfile(inputfile1)
         iter2, loss2, acc2 = readfile(inputfile2)
 	iter3, loss3, acc3 = readfile(inputfile3)
+        iter4, loss4, acc4 = readfile(inputfile4)
+        iter5, loss5, acc5 = readfile(inputfile5)
 
-	lens=min(len(iter1),len(iter2),len(iter3))
+	lens=min(len(iter1),len(iter2),len(iter3),len(iter3),len(iter4))
 
 	x=iter1[0:lens]
 
@@ -39,9 +43,15 @@ if __name__ == "__main__":
 	y_loss1=loss1[0:lens]
 	y_loss2=loss2[0:lens]
 	y_loss3=loss3[0:lens]
+	y_loss4=loss5[0:lens]
+	y_loss5=loss5[0:lens]
+
 	plot(x,y_loss1,'r', label=inputfile1, linewidth=2)  
 	plot(x,y_loss2,'b', label=inputfile2,linewidth=2)
         plot(x,y_loss3,'g', label=inputfile3,linewidth=2)
+        plot(x,y_loss4,'c', label=inputfile4,linewidth=2)
+        plot(x,y_loss5,'m', label=inputfile5,linewidth=2)
+
 	plt.legend(loc='lower right')
 	plt.title('eval_loss', fontsize = 16)
 	savefig('eval_loss.jpg')
@@ -50,9 +60,14 @@ if __name__ == "__main__":
         y_acc1=acc1[0:lens]
         y_acc2=acc2[0:lens]
         y_acc3=acc3[0:lens]
+        y_acc4=acc4[0:lens]
+        y_acc5=acc5[0:lens]
         plot(x,y_acc1,'r', label=inputfile1, linewidth=2)
         plot(x,y_acc2,'b', label=inputfile2,linewidth=2)
         plot(x,y_acc3,'g', label=inputfile3,linewidth=2)
+        plot(x,y_acc4,'c', label=inputfile4,linewidth=2)
+        plot(x,y_acc5,'m', label=inputfile5,linewidth=2)
+
         plt.legend(loc='lower right')
         plt.title('eval_accuracy', fontsize = 16)
         savefig('eval_accuracy.jpg')

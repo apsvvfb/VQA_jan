@@ -1,8 +1,9 @@
 import numpy as np
+import os
 
-for i = 1 : num(English_Ques):
-    for d = 1 : N 
-	final_atten_maps[d]=final_atten_maps[d]+
+i=np.zeros(3)
+os.system("python temp2.py %d" %i:q
+)
 
 
 
