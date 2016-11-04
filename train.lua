@@ -17,7 +17,7 @@ require 'misc.recursive_atten'
 require 'misc.optim_updates'
 local utils = require 'misc.utils'
 require 'xlua'
-
+require 'os'
 -------------------------------------------------------------------------------
 -- Input arguments and options
 -------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ cmd:option('-max_iters', 210000, 'max number of iterations to run for (-1 = run 
 cmd:option('-iterPerEpoch', 1200)
 
 -- Evaluation/Checkpointing
-cmd:option('-save_checkpoint_every', 6000, 'how often to save a model checkpoint?')
+cmd:option('-save_checkpoint_every',6000, 'how often to save a model checkpoint?')
 cmd:option('-checkpoint_path', 'save/train_vgg', 'folder to save checkpoints into (empty = this folder)')
 
 -- Visualization
@@ -74,7 +74,7 @@ cmd:option('-seed', 123, 'random number generator seed to use')
 cmd:option('-use_english_attenmaps', 1, 'use attenmaps generated from English questions or not. 1 means yes, while 0 means no')
 cmd:option('-input_area_train_h5','data/vqa_data_area_train.h5',' hdf5 file which stores the attenmaps for train images')
 cmd:option('-input_area_test_h5', 'data/vqa_data_area_test.h5','a hdf5 file which stores the attenmaps for test images')
-
+cmd:option('-output_eval_h5','data/eval_prediction.h5','a hdf5 file which stores the result for each sample in evaluation set. max_iters/save_checkpoint_every * totalnum_evalset') 
 cmd:text()
 
 -------------------------------------------------------------------------------
@@ -200,6 +200,10 @@ local function eval_split(split)
   local right_sum = 0
   local predictions = {}
   local total_num = loader:getDataNum(split)
+
+  local ni=0
+  --local predres=torch.zeros(total_num)
+  local predres=torch.zeros(317584) -- total_num + batchsize(=20)
   while true do
     local data = loader:getBatch{batch_size = opt.batch_size, split = split}
     -- ship the data to cuda
@@ -234,9 +238,10 @@ local function eval_split(split)
     local tmp,pred=torch.max(out_feat,2)
 
     for i = 1, pred:size()[1] do
-
+      ni=ni+1
       if pred[i][1] == data.answer[i] then
         right_sum = right_sum + 1
+	predres[ni]=1
       end
     end
 
@@ -245,7 +250,7 @@ local function eval_split(split)
     if n >= total_num then break end
   end
 
-  return loss_sum/loss_evals, right_sum / total_num
+  return loss_sum/loss_evals, right_sum / total_num, predres
 end
 
 
@@ -352,6 +357,9 @@ local learning_rate = opt.learning_rate
 paths.mkdir(opt.checkpoint_path .. '_' .. opt.co_atten_type)
 
 outfilena = io.open("train_with_engAttenmaps.txt", "w")
+evali=0
+evalnum=317564+opt.batch_size
+outpred=torch.Tensor(torch.ceil(opt.max_iters/opt.save_checkpoint_every),evalnum)
 
 while true do
   -- eval loss/gradient
@@ -375,7 +383,10 @@ while true do
 
   -- save checkpoint once in a while (or on final iteration)
   if (iter % opt.save_checkpoint_every == 0 or iter == opt.max_iters) then
-      local val_loss, val_accu = eval_split(2)
+      local val_loss, val_accu, preds = eval_split(2)
+      evali=evali+1
+      outpred[evali]=preds
+
       print('validation loss: ', val_loss, 'accuracy ', val_accu)
       outfilena:write('validation loss: ', val_loss, 'accuracy ', val_accu, "\n")
 
@@ -414,3 +425,7 @@ while true do
 end
 
 io.close(outfilena)
+local eval_h5_file = hdf5.open(opt.output_eval_h5, 'w') 
+eval_h5_file:write('/predictions', outpred) 
+eval_h5_file:close() 
+

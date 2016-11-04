@@ -1,10 +1,11 @@
 #!/bin/bash
 
-inputfile="train_with_engAttenmaps.txt"
+for inputfile in `ls train_with*.txt`;do
+#inputfile="train_with_engAttenmaps.txt"
 #inputfile="train_without_engAttenmaps.txt"
 
-outfile1=trainloss_with.txt
-outfile2=eval_with.res
+outfile1="trainloss_$inputfile"
+outfile2="eval_$inputfile"
 if [ -r $outfile1 ];then rm $outfile1;fi
 if [ -r $outfile2 ];then rm $outfile2;fi
 
@@ -32,6 +33,6 @@ do
 	fi
 done < $inputfile
 
-
+done
 
 

@@ -72,3 +72,25 @@ output: data/vqa_data_area_train.h5 + data/vqa_data_area_test.h5
 th train.lua
 
 7. Analysis/
+
+---------------------------------
+
+1. v1_all_1dividedby196
+P=(1/196, 1/196, ..., 1/196, a1, a2, ..., a196) [1x392]
+M=WP=(m1,m2,m3, ...,m196) (mi is a scalar)
+V=(m1v1,m2v2,...,m196v196) [vi is a feature vector(512x1) for region i of image j.]
+
+2. v1_all_1
+P=(1, 1, ..., 1, a1, a2, ..., a196)  [1x392]
+M=WP=(m1,m2,m3, ...,m196) (mi is a scalar)
+V=(m1v1,m2v2,...,m196v196) [vi is a feature vector(512x1) for region i of image j.]
+
+3.v2_onlyA
+P=(a1, a2, ..., a196) [1x196]
+M=P=(m1,m2,m3, ...,m196) (mi is a scalar)
+V=(m1v1,m2v2,...,m196v196) [vi is a feature vector(512x1) for region i of image j.]
+
+3.v2_addone
+P=(a1, a2, ..., a196) [1x196]
+M=P+1=(a1+1, a2+1, ..., a196+1)=(m1,m2,m3, ...,m196) (mi is a scalar)
+V=(m1v1,m2v2,...,m196v196) [vi is a feature vector(512x1) for region i of image j.]

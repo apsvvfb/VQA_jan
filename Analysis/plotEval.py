@@ -24,29 +24,36 @@ def readfile(inputfile):
 
 
 if __name__ == "__main__":
-	inputfile1="eval_with.res"
-	inputfile2="eval_without.res"
+	inputfile1="eval_train_without_engAttenmaps.txt"
+	inputfile2="eval_train_with_v1_1dividedby196.txt"
+	inputfile3="eval_train_with_v1_1.txt"
 	iter1, loss1, acc1 = readfile(inputfile1)
         iter2, loss2, acc2 = readfile(inputfile2)
+	iter3, loss3, acc3 = readfile(inputfile3)
 
-	lens=min(len(iter1),len(iter2))
+	lens=min(len(iter1),len(iter2),len(iter3))
+
 	x=iter1[0:lens]
 
 	plt.figure()
 	y_loss1=loss1[0:lens]
 	y_loss2=loss2[0:lens]
-	plot(x,y_loss1,'b', label="with_english_attenmaps", linewidth=2)  
-	plot(x,y_loss2,'r', label="without_english_attenmaps",linewidth=2)
-	plt.legend(loc='upper left')
+	y_loss3=loss3[0:lens]
+	plot(x,y_loss1,'r', label=inputfile1, linewidth=2)  
+	plot(x,y_loss2,'b', label=inputfile2,linewidth=2)
+        plot(x,y_loss3,'g', label=inputfile3,linewidth=2)
+	plt.legend(loc='lower right')
 	plt.title('eval_loss', fontsize = 16)
 	savefig('eval_loss.jpg')
 	
 	plt.figure()
         y_acc1=acc1[0:lens]
         y_acc2=acc2[0:lens]
-        plot(x,y_acc1,'b', label="with_english_attenmaps", linewidth=2)
-        plot(x,y_acc2,'r', label="without_english_attenmaps",linewidth=2)
-        plt.legend(loc='upper left')
+        y_acc3=acc3[0:lens]
+        plot(x,y_acc1,'r', label=inputfile1, linewidth=2)
+        plot(x,y_acc2,'b', label=inputfile2,linewidth=2)
+        plot(x,y_acc3,'g', label=inputfile3,linewidth=2)
+        plt.legend(loc='lower right')
         plt.title('eval_accuracy', fontsize = 16)
         savefig('eval_accuracy.jpg')
 

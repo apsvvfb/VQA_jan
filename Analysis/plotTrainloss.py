@@ -20,19 +20,23 @@ def readfile(inputfile):
 
 
 if __name__ == "__main__":
-	inputfile1="trainloss_with.txt"
-	inputfile2="trainloss_without.txt"
+	inputfile1="trainloss_train_without_engAttenmaps.txt"
+	inputfile2="trainloss_train_with_v1_1dividedby196.txt"
+        inputfile3="trainloss_train_with_v1_1.txt"
 	loss1 = readfile(inputfile1)
         loss2 = readfile(inputfile2)
+	loss3 = readfile(inputfile3)
 
-	lens=min(len(loss1),len(loss2))
+	lens=min(len(loss1),len(loss2),len(loss3))
 	x=[y*600 for y in range(lens)]
 
 	plt.figure()
 	y_loss1=loss1[0:lens]
 	y_loss2=loss2[0:lens]
-	plot(x,y_loss1,'b', label="with_english_attenmaps", linewidth=2)  
-	plot(x,y_loss2,'r', label="without_english_attenmaps",linewidth=2)
-	plt.legend(loc='upper left')
+	y_loss3=loss3[0:lens]
+	plot(x,y_loss1,'r', label=inputfile1, linewidth=2)  
+	plot(x,y_loss2,'b', label=inputfile2, linewidth=2)
+	plot(x,y_loss3,'g', label=inputfile3, linewidth=2)
+	plt.legend(loc='lower right')
 	plt.title('train_loss', fontsize = 16)
 	savefig('train_loss.jpg')

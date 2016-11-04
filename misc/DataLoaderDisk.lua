@@ -110,7 +110,8 @@ function DataLoader:getBatch(opt)
     end
 
     if self.ifengatten == 1 then
-        self.attenprob_batch = torch.Tensor(batch_size,392)
+        --self.attenprob_batch = torch.Tensor(batch_size,392)
+        self.attenprob_batch = torch.Tensor(batch_size,196)
     end
 
     for i=1,batch_size do
@@ -141,7 +142,8 @@ function DataLoader:getBatch(opt)
                 end
 	    end
 	    if self.ifengatten == 1 then
-	        local attenprob = self.h5_atten_file_train:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
+	        --local attenprob = self.h5_atten_file_train:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
+	        local attenprob = self.h5_atten_file_train:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,196})
 	        self.attenprob_batch[i] = attenprob
 	    end
         else
@@ -161,7 +163,8 @@ function DataLoader:getBatch(opt)
             end
 
 	    if self.ifengatten == 1 then
-                local attenprob = self.h5_atten_file_test:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
+                --local attenprob = self.h5_atten_file_test:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,392})
+		local attenprob = self.h5_atten_file_test:read('areaprobs'):partial({img_idx[i],img_idx[i]},{1,196})
                 self.attenprob_batch[i] = attenprob
 	    end
         end
@@ -172,7 +175,8 @@ function DataLoader:getBatch(opt)
     if split == 0 or split == 1 then
         data.images = self.img_batch:view(batch_size, 196, -1):contiguous()
 	if self.ifengatten == 1 then
-   	    data.attenprobs = self.attenprob_batch:view(batch_size,392,-1):contiguous()
+   	    --data.attenprobs = self.attenprob_batch:view(batch_size,392,-1):contiguous()
+   	    data.attenprobs = self.attenprob_batch:view(batch_size,196,-1):contiguous()
 	end
         data.questions = self.ques_train:index(1, ques_idx)
         data.ques_id = self.ques_id_train:index(1, ques_idx)
@@ -181,7 +185,8 @@ function DataLoader:getBatch(opt)
     else
         data.images = self.img_batch:view(batch_size, 196, -1):contiguous()
 	if self.ifengatten == 1 then
-	    data.attenprobs = self.attenprob_batch:view(batch_size,392,-1):contiguous()
+	    --data.attenprobs = self.attenprob_batch:view(batch_size,392,-1):contiguous()
+	    data.attenprobs = self.attenprob_batch:view(batch_size,196,-1):contiguous()
 	end
         data.questions = self.ques_test:index(1, ques_idx)
         data.ques_id = self.ques_id_test:index(1, ques_idx)

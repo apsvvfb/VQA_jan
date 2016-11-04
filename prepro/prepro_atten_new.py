@@ -18,8 +18,8 @@ def getIdx(imgidxs,itoimg):
   return idxs
 
 def genHdf5(names,outfile,attenmaps,idxs):
-  #attenImgs  = np.ones((len(names),196))/196
-  attenImgs  = np.ones((len(names),196))
+  #attenImgs  = np.ones((len(names),196))/196	#v1_all_1dividedby196
+  attenImgs  = np.ones((len(names),196))	#v1_all_1
   attenprobs = np.zeros((len(names),196))
   for ix, imgname in enumerate(names):
      imgid=os.path.basename(imgname).split('.')[0]
@@ -33,9 +33,11 @@ def genHdf5(names,outfile,attenmaps,idxs):
             attentemp[j]=atten
         attenprobs[ix]=np.sum(attentemp, axis=0)/ques_len    
      else:
-	attenprobs[ix]=np.ones((1,196)) 
-	#attenprobs[ix]=np.ones((1,196))/196
-  final=np.hstack((attenImgs,attenprobs))
+	attenprobs[ix]=np.ones((1,196))		#v1_all_1
+	#attenprobs[ix]=np.ones((1,196))/196 	#v1_all_1dividedby196
+  #final=np.hstack((attenImgs,attenprobs)) #v1_*
+  final=attenprobs   #v2_onlyA
+  #final=attenprobs+1 #v2_addone
   with h5py.File(outfile, 'w') as hf:
      hf.create_dataset('areaprobs', data=final)
   
